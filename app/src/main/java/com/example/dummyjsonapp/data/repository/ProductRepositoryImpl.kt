@@ -163,9 +163,9 @@ class ProductRepositoryImpl @Inject constructor(
         emit(Resource.Loading)
         try {
             val favorites = productDao.getFavoriteProducts().map { it.toDomain().copy(isFavorite = true) }
-            if (favorites.isNotEmpty()) {
-                emit(Resource.Success(favorites))
-            }
+            emit(Resource.Success(favorites))
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             emit(Resource.Error(e.message ?: "Không thể tải danh sách yêu thích!"))
         }

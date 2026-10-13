@@ -54,13 +54,16 @@ class FavoriteFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     adapter.submitList(state.products)
-                    if (!state.isLoading && state.products.isEmpty()) {
-                        binding.rvFavorites.visibility = View.GONE
-                        binding.layoutEmpty.visibility = View.VISIBLE
-                    } else {
-                        binding.rvFavorites.visibility = View.VISIBLE
-                        binding.layoutEmpty.visibility = View.GONE
-                    }
+                    binding.progressFavorites.visibility = if (state.isLoading) View.VISIBLE else View.GONE
+                    binding.tvFavoriteError.text = state.errorMessage
+                    binding.tvFavoriteError.visibility =
+                        if (!state.isLoading && state.errorMessage != null) View.VISIBLE else View.GONE
+                    binding.layoutEmpty.visibility =
+                        if (!state.isLoading && state.errorMessage == null && state.products.isEmpty())
+                            View.VISIBLE else View.GONE
+                    binding.rvFavorites.visibility =
+                        if (!state.isLoading && state.errorMessage == null && state.products.isNotEmpty())
+                            View.VISIBLE else View.GONE
                 }
             }
         }

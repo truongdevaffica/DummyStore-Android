@@ -36,4 +36,19 @@
             android:textSize="16sp"
             android:textColor="@android:color/darker_gray" />
     </LinearLayout>
+    <ProgressBar
+        android:id="@+id/progressFavorites"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/tvFavoriteError"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:padding="24dp"
+        android:gravity="center"
+        android:visibility="gone" />
 </FrameLayout>

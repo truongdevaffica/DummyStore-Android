@@ -6,7 +6,8 @@ import com.example.dummyjsonapp.domain.repository.ProductRepository
 import com.example.dummyjsonapp.domain.result.Resource
 import com.example.dummyjsonapp.presentation.UiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,22 +19,25 @@ import javax.inject.Inject
 class FavoriteViewModel @Inject constructor(
     private val repository: ProductRepository
 ): ViewModel(){
-    private val _uiState = MutableStateFlow(UiState())
+    private val _uiState = MutableStateFlow(UiState(isLoading = true))
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+
+    private var loadJob: Job? = null
 
     init {
         loadFavoriteProductsList()
     }
 
     fun loadFavoriteProductsList() {
-        viewModelScope.launch() {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             repository.getFavoriteProducts().collect { resource ->
                 when (resource) {
                     is Resource.Loading -> {
-                        _uiState.update { it.copy(isLoading = true) }
+                        _uiState.update { it.copy(isLoading = true, errorMessage = null) }
                     }
                     is Resource.Success -> {
-                        _uiState.update { it.copy(isLoading = false, products = resource.data) }
+                        _uiState.update { it.copy(isLoading = false, products = resource.data, errorMessage = null) }
                     }
                     is Resource.Error -> {
                         _uiState.update { it.copy(isLoading = false, errorMessage = resource.message) }
@@ -43,9 +47,19 @@ class FavoriteViewModel @Inject constructor(
         }
     }
     fun toggleFavorite(productId: Int, isFavorite: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            repository.toggleFavorite(productId, isFavorite)
-            loadFavoriteProductsList()
+        viewModelScope.launch {
+            loadJob?.cancel()
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            try {
+                repository.toggleFavorite(productId, isFavorite)
+                loadFavoriteProductsList()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _uiState.update {
+                    it.copy(isLoading = false, errorMessage = e.message ?: "Không thể cập nhật yêu thích!")
+                }
+            }
         }
     }
 }
